@@ -19,16 +19,30 @@ const optimization = () => {
     const config = {
         splitChunks: {
             name: 'all'
-        }
+        },
     };
     if (!isDev) {
         config.minimizer = [
-            new OptimizeCssAssetsWebpackPlugin(),
+            new OptimizeCssAssetsWebpackPlugin({
+                assetNameRegExp: /\.css$/g,
+                cssProcessor: require('cssnano'),
+                cssProcessorPluginOptions: {
+                    preset: ['default', {discardComments: {removeAll: true}}],
+                },
+                canPrint: true
+            }),
             new TerserWebpackPlugin(),
             new UglifyJsPlugin({
                 test: /\.js(\?.*)?$/i,
+                compress: {},
+                parse: {},
+                keep_fnames: false,
+                mangle: true,
+                output: null,
+                ie8: true,
                 parallel: true,
                 cache: true,
+                warnings: 'verbose',
                 extractComments: 'all',
             })
         ]
@@ -88,7 +102,7 @@ const babelLoader = (add = 'js') => {
 
     return use
 };
-const basePlugins=()=>{
+const basePlugins = () => {
     const base = [
         new HTMLWebpackPlugin({
             template: './index.html',
@@ -99,14 +113,15 @@ const basePlugins=()=>{
         }),
         new CleanWebpackPlugin(),
         new CopyWebpackPlugin([
-                {
-                    from: path.resolve(__dirname, './src/assets/images/'),
-                    to: path.resolve(__dirname, 'dist/images/')
-                },
-            ]),
+            {
+                from: path.resolve(__dirname, './src/assets/images/'),
+                to: path.resolve(__dirname, 'dist/images/')
+            },
+        ]),
         new MiniCssExtractPlugin({
             filename: filename('css'),
         }),
+        new OptimizeCssAssetsWebpackPlugin(),
         new webpack.DefinePlugin({
             PRODUCTION: JSON.stringify(true),
             VERSION: JSON.stringify('5fa3b9'),
@@ -118,8 +133,8 @@ const basePlugins=()=>{
         }),
     ];
 
-    if(isDev){
-        base.push( new BundleAnalyzerPlugin() );
+    if (isDev) {
+        base.push(new BundleAnalyzerPlugin());
     }
 
     return base;
@@ -146,7 +161,7 @@ const config = {
             '@models': path.resolve(__dirname, 'src/models'),
         }
     },
-    plugins:basePlugins(),
+    plugins: basePlugins(),
     module: {
         rules: [
             {
